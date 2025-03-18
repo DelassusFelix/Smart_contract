@@ -1,13 +1,38 @@
-import { HardhatUserConfig } from "hardhat/config";
+import { HardhatUserConfig, task } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
-import dotenv from "dotenv";
+import "@nomicfoundation/hardhat-ignition";
+import "hardhat-gas-reporter";
+import "solidity-coverage";
+// /!\
+import "@nomicfoundation/hardhat-verify";
+// /!\
 
-dotenv.config();
+import "dotenv/config";
 
+task("accounts", "Prints the list of accounts", async (args, hre) => {
+  const accounts = await hre.ethers.getSigners();
+  for (const account of accounts) {
+    console.log(account.address);
+  }
+});
+
+// Go to https://www.alchemy.com/, sign up, create a new API key
+// in its dashboard, and replace "KEY" with it
 const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "";
+
+// Replace this private key with your Sepolia account private key
+// To export your private key from Coinbase Wallet, go to
+// Settings > Developer Settings > Show private key
+// To export your private key from Metamask, open Metamask and
+// go to Account Details > Export Private Key
+// Beware: NEVER put real Ether into testing accounts
 const PRIVATE_KEY = process.env.PRIVATE_KEY || "";
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
 
+// Go to https://hardhat.org/config/ to learn more
+/**
+ * @type import('hardhat/config').HardhatUserConfig
+ */
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
@@ -30,7 +55,7 @@ const config: HardhatUserConfig = {
   solidity: {
     compilers: [
       {
-        version: "0.8.19",
+        version: "0.8.20",
       },
     ],
   },
