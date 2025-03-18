@@ -103,4 +103,14 @@ function getWinningProposal() public view returns (string memory) {
         }
     }
     return proposals[winningProposalId].description;
+<<<<<<< HEAD:server/contracts/Voting.sol
 }
+=======
+}
+
+
+
+
+
+
+>>>>>>> 3754716c50f921df4db93804aee41d3bd19928c1:contracts/Voting.sol
