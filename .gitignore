@@ -1,0 +1,29 @@
+# Node.js dependencies
+node_modules/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Hardhat cache and artifacts
+cache/
+artifacts/
+
+# Environment variables
+.env
+
+# Compiled contracts and TypeChain files
+typechain/
+typechain-types/
+
+# Hardhat test coverage reports
+coverage/
+coverage.json
+
+# VS Code settings
+.vscode/
+
+# Logs and debugging files
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
