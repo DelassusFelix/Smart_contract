@@ -58,8 +58,9 @@ function startProposalsRegistration() public onlyOwner {
 }
 
 function addProposal(string memory _description) public onlyOwner {
-    proposals.push(Proposal(_description, 0));
-    emit ProposalRegistered(proposals.length - 1);
+    require(currentWorkflowStatus == WorkflowStatus.ProposalsRegistrationStarted, "Proposals registration session is not active");
+        proposals.push(Proposal(_description, 0));
+        emit ProposalRegistered(proposals.length - 1);
 }  
 
 function endProposalsRegistration() public onlyOwner {
@@ -73,6 +74,7 @@ function startVotingSession() public onlyOwner {
 }
 
 function vote(uint _proposalId) public {
+    require(currentWorkflowStatus == WorkflowStatus.VotingSessionStarted, "Voting session is not active");
     require(voterAdress[msg.sender].isRegistered, "Voter not registered");
     require(!voterAdress[msg.sender].hasVoted, "Voter already voted");
     require(_proposalId < proposals.length, "Invalid proposal id");
@@ -93,30 +95,48 @@ function tallyVotes() public onlyOwner {
 }
 
 function getWinningProposal() public view returns (string memory) {
-    uint winningVoteCount = 0;
-    for (uint i = 0; i < proposals.length; i++) {
-        if (proposals[i].voteCount > winningVoteCount) {
-            winningVoteCount = proposals[i].voteCount;
-            winningProposalId = i;
+    require(currentWorkflowStatus == WorkflowStatus.VotesTallied, "Tallied session is not active");
+        uint winningVoteCount = 0;
+        for (uint i = 0; i < proposals.length; i++) {
+            if (proposals[i].voteCount > winningVoteCount) {
+                winningVoteCount = proposals[i].voteCount;
+                winningProposalId = i;
+            }
         }
-    }
-    return proposals[winningProposalId].description;
+        return proposals[winningProposalId].description;
 }
 
 function getAllVotes() public view returns (address[] memory, uint[] memory) {
-    uint totalVoters = whiteList.length;
-    address[] memory voters = new address[](totalVoters);
-    uint[] memory votes = new uint[](totalVoters);
-    uint index = 0;
+    require(voterAdress[msg.sender].isRegistered, "You can't see it if you are not in the whitelist");
+        uint totalVoters = whiteList.length;
+        address[] memory voters = new address[](totalVoters);
+        uint[] memory votes = new uint[](totalVoters);
+        uint index = 0;
 
-    for (uint i = 0; i < whiteList.length; i++) {
-        address voterAddress = whiteList[i];
-        if (voterAdress[voterAddress].hasVoted) {
-            voters[index] = voterAddress;
-            votes[index] = voterAdress[voterAddress].votedProposalId;
-            index++;
+        for (uint i = 0; i < whiteList.length; i++) {
+            address voterAddress = whiteList[i];
+            if (voterAdress[voterAddress].hasVoted) {
+                voters[index] = voterAddress;
+                votes[index] = voterAdress[voterAddress].votedProposalId;
+                index++;
+            }
         }
-    }
 
-    return (voters, votes);
+        return (voters, votes);
+}
+
+//------------------------------------------Fonctionnalitées supplémentaires---------------------------------------------------------
+
+function cancelVote() public {
+    require(currentWorkflowStatus == WorkflowStatus.VotingSessionStarted, "Voting session is not active");
+    require(voterAdress[msg.sender].isRegistered, "Voter not registered");
+    require(voterAdress[msg.sender].hasVoted, "Voter has not voted yet");
+
+    uint votedProposalId = voterAdress[msg.sender].votedProposalId;
+    proposals[votedProposalId].voteCount--;
+
+    voterAdress[msg.sender].hasVoted = false;
+    voterAdress[msg.sender].votedProposalId = 0;
+
+    emit Voted(msg.sender, votedProposalId);
 }
