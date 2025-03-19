@@ -62,3 +62,14 @@ const config: HardhatUserConfig = {
 };
 
 export default config;
+
+require("@nomiclabs/hardhat-ethers");
+
+module.exports = {
+  solidity: "0.8.20",
+  networks: {
+    hardhat: {
+      chainId: 1337
+    }
+  }
+};
