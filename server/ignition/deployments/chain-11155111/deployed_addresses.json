@@ -1,3 +1,4 @@
 {
-  "StorageModule#Storage": "0xfE3dC2852605089Fd20d56B9eB1C4B73D98Bc9E9"
+  "StorageModule#Storage": "0xfE3dC2852605089Fd20d56B9eB1C4B73D98Bc9E9",
+  "VotingModule#Voting": "0x9777e166F6D7299f2914d738Edf19f1E62E21513"
 }

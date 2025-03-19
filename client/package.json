@@ -9,8 +9,10 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@ethersproject/providers": "^5.8.0",
     "@rainbow-me/rainbowkit": "^2.2.4",
     "@wagmi/core": "^2.16.7",
+    "dotenv": "^16.4.7",
     "ethers": "^6.13.5",
     "next": "15.2.3",
     "react": "^19.0.0",
