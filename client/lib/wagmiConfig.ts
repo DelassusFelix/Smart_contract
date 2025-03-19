@@ -4,7 +4,7 @@ import "dotenv/config";
 
 export const wagmiConfig = getDefaultConfig({
   appName: "Votereum",
-  projectId: process.env.VOTING_ID || "",
+  projectId: '0x9777e166F6D7299f2914d738Edf19f1E62E21513',
   chains: [mainnet, sepolia],
   ssr: true,
 });

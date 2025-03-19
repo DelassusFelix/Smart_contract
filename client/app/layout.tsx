@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import Image from "next/image";
-import "./globals.css";
-import Providers from "./providers";
+import "@/app/globals.css";
+import Providers from "@/app/providers";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -21,10 +21,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className={`${poppins.variable} font-sans`}>
-      <body className="bg-gray-100">
+    <html lang="en" className={`${poppins.variable} font-sans bg-gray-800`}>
+      <body className="bg-gray-800 w-screen">
       <nav className="bg-gray-800 p-4">
-                <ul className="flex items-center space-x-4">
+                <ul className="flex justify-between items-center space-x-4 mr-4">
                   <li>
                     <a
                       href="/"
@@ -38,6 +38,12 @@ export default function RootLayout({
                       />
                     </a>
                   </li>
+                  <ul>
+                    <li>
+                      <a href="/logout"
+                      className="flex items-center gap-2 text-xl text-white hover:text-gray-400">Logout</a>
+                    </li>
+                  </ul>
                 </ul>
               </nav>
         <Providers>{children}</Providers>

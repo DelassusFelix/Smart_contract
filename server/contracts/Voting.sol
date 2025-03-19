@@ -157,4 +157,23 @@ contract Voting is Ownable {
 
         emit Voted(msg.sender, votedProposalId);
     }
+
+    function resetSession() public onlyOwner {
+        // Reset workflow status
+        currentWorkflowStatus = WorkflowStatus.RegisteringVoters;
+
+        // Clear proposals
+        delete proposals;
+
+        // Reset voters' data
+        for (uint i = 0; i < whiteList.length; i++) {
+            address voterAddress = whiteList[i];
+            voterAdress[voterAddress].isRegistered = false;
+            voterAdress[voterAddress].hasVoted = false;
+            voterAdress[voterAddress].votedProposalId = 0;
+        }
+
+        // Optionally clear whitelist if needed
+        // delete whiteList;
+    }
 }
