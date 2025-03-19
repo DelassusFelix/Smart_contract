@@ -14,6 +14,7 @@ contract Voting is Ownable {
     event WorkflowStatusChange(WorkflowStatus previousStatus, WorkflowStatus newStatus);
     event ProposalRegistered(uint proposalId);
     event Voted(address voter, uint proposalId);
+    event VoteCancelled(address voter, uint proposalId);
 
     struct Voter {
         bool isRegistered;
@@ -64,6 +65,7 @@ contract Voting is Ownable {
 
     function startProposalsRegistration() public onlyOwner {
         emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, WorkflowStatus.ProposalsRegistrationStarted);
+        currentWorkflowStatus = WorkflowStatus.ProposalsRegistrationStarted;
     }
 
     function addProposal(string memory _description) public onlyOwner {
@@ -74,12 +76,14 @@ contract Voting is Ownable {
 
     function endProposalsRegistration() public onlyOwner {
         emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, WorkflowStatus.ProposalsRegistrationEnded);
+        currentWorkflowStatus = WorkflowStatus.ProposalsRegistrationEnded;
     }
 
     //-----------------------------------------Voting session------------------------------------------------
 
     function startVotingSession() public onlyOwner {
         emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationEnded, WorkflowStatus.VotingSessionStarted);
+        currentWorkflowStatus = WorkflowStatus.VotingSessionStarted;
     }
 
     function vote(uint _proposalId) public {
@@ -95,19 +99,20 @@ contract Voting is Ownable {
 
     function endVotingSession() public onlyOwner {
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionStarted, WorkflowStatus.VotingSessionEnded);
+        currentWorkflowStatus = WorkflowStatus.VotingSessionEnded;
     }
 
     //-----------------------------------------Vote counter and analyse------------------------------------------------
 
     function tallyVotes() public onlyOwner {
         emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, WorkflowStatus.VotesTallied);
+        currentWorkflowStatus = WorkflowStatus.VotesTallied;
     }
 
     function getWinningProposal() public view returns (string memory) {
         require(currentWorkflowStatus == WorkflowStatus.VotesTallied, "Tallied session is not active");
         uint winningVoteCount = 0;
         uint winningProposalIndex = 0; // Use a local variable instead of modifying state
-
         for (uint i = 0; i < proposals.length; i++) {
             if (proposals[i].voteCount > winningVoteCount) {
                 winningVoteCount = proposals[i].voteCount;
