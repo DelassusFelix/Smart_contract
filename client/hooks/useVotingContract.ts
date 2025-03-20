@@ -1,6 +1,9 @@
 import { useWalletClient } from "wagmi";
 import { Contract, JsonRpcProvider } from "ethers";
 import { contractAddress, contractABI } from "../lib/contractConfig";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export async function useVotingContract() {
   const { data: walletClient } = useWalletClient();

@@ -18,23 +18,25 @@ import { useVotingContract } from "@/hooks/useVotingContract";
 import Navbar from "@/components/navbar";
 
 export default function VoterPage() {
-  const { address, isConnected } = useAccount(); // Récupérer l'adresse connectée
-  const contract = useVotingContract(); // Hook pour accéder au contrat
+  const { address, isConnected } = useAccount(); // Get the connected address
+  const contract = useVotingContract(); // Hook to access the contract
 
   const [proposal, setProposal] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [isRegistered, setIsRegistered] = useState(false);
   const [proposals, setProposals] = useState<string[]>([]);
+  const [workflowStatus, setWorkflowStatus] = useState<number | null>(null);
 
+  // Check voter registration
   useEffect(() => {
     const checkRegistration = async () => {
       if (!contract || !address) return;
 
       try {
-        const resolvedContract = await contract; // Resolve the contract promise
+        const resolvedContract = await contract;
         if (resolvedContract) {
-          const voter = await resolvedContract.voterAddress(address); // Correct method name
+          const voter = await resolvedContract.voterAddress(address);
           setIsRegistered(voter.isRegistered);
         }
       } catch (err) {
@@ -47,6 +49,47 @@ export default function VoterPage() {
     }
   }, [contract, address, isConnected]);
 
+  // Fetch proposals
+  const fetchProposals = async () => {
+    if (!contract) return;
+
+    try {
+      const resolvedContract = await contract;
+      if (resolvedContract) {
+        const fetchedProposals = [];
+        let index = 0;
+        while (true) {
+          try {
+            const proposal = await resolvedContract.proposals(index);
+            fetchedProposals.push(proposal.description);
+            index++;
+          } catch {
+            break; // Stop fetching when an error occurs
+          }
+        }
+        setProposals(fetchedProposals);
+      }
+    } catch (err) {
+      console.error("Failed to fetch proposals:", err);
+    }
+  };
+
+  // Fetch workflow status
+  const fetchWorkflowStatus = async () => {
+    if (!contract) return;
+
+    try {
+      const resolvedContract = await contract;
+      if (resolvedContract) {
+        const status = await resolvedContract.currentWorkflowStatus();
+        setWorkflowStatus(status);
+      }
+    } catch (err) {
+      console.error("Failed to fetch workflow status:", err);
+    }
+  };
+
+  // Submit a proposal
   const handleSubmitProposal = async () => {
     if (!isRegistered) {
       setError("You must be a registered voter");
@@ -59,12 +102,13 @@ export default function VoterPage() {
     }
 
     try {
-      const resolvedContract = await contract; // Resolve the contract promise
+      const resolvedContract = await contract;
       if (resolvedContract) {
-        const tx = await resolvedContract.addProposal(proposal); // Appel de la fonction du contrat
-        await tx.wait(); // Attendre la confirmation de la transaction
+        const tx = await resolvedContract.addProposal(proposal);
+        await tx.wait();
         setProposal("");
         setSuccess("Proposal submitted successfully");
+        fetchProposals();
       }
     } catch (err) {
       console.error("Failed to submit proposal:", err);
@@ -72,28 +116,32 @@ export default function VoterPage() {
     }
   };
 
-  const fetchProposals = async () => {
-    if (!contract) return;
+  // Cast a vote
+  const handleVote = async (proposalId: number) => {
+    if (workflowStatus != 3) { // 3 corresponds to VotingSessionStarted
+      setError("Voting session is not active");
+      return;
+    }
 
     try {
-      const resolvedContract = await contract; // Resolve the contract promise
-      if (resolvedContract) {
-        const proposalsCount = await resolvedContract.getProposalsCount(); // Fetch the number of proposals
-        const fetchedProposals = [];
-        for (let i = 0; i < proposalsCount; i++) {
-          const proposal = await resolvedContract.getProposal(i); // Fetch each proposal
-          fetchedProposals.push(proposal.description);
-        }
-        setProposals(fetchedProposals);
+      const resolvedContract = await contract;
+      if (!resolvedContract) {
+        setError("Contract is not available");
+        return;
       }
+      const tx = await resolvedContract.vote(proposalId);
+      await tx.wait();
+      setSuccess(`Vote cast successfully for proposal ${proposalId + 1}`);
     } catch (err) {
-      console.error("Failed to fetch proposals:", err);
+      console.error("Failed to cast vote:", err);
+      setError("Failed to cast vote");
     }
   };
 
   useEffect(() => {
     if (isConnected) {
       fetchProposals();
+      fetchWorkflowStatus();
     }
   }, [contract, isConnected]);
 
@@ -143,7 +191,7 @@ export default function VoterPage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Not Registered</AlertTitle>
                     <AlertDescription>
-                      Your address is not registered as a voter {String(isRegistered)}
+                      Your address is not registered as a voter
                     </AlertDescription>
                   </Alert>
                 )}
@@ -187,7 +235,15 @@ export default function VoterPage() {
               <ul>
                 {proposals.map((proposal, index) => (
                   <li key={index} className="mb-2">
-                    {index + 1}. {proposal}
+                    {index + 1}. {proposal}{" "}
+                    {workflowStatus == 3 && (
+                      <Button
+                        onClick={() => handleVote(index)}
+                        className="ml-4"
+                      >
+                        Vote
+                      </Button>
+                    )}
                   </li>
                 ))}
               </ul>

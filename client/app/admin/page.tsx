@@ -13,22 +13,33 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle, UserPlus, Users } from "lucide-react";
+import { AlertCircle, CheckCircle } from "lucide-react";
 import { useAccount } from "wagmi";
-import { useRouter } from "next/navigation";
 import Navbar from "@/components/navbar";
 
 export default function AdminPage() {
   const { address, isConnected } = useAccount();
-  const router = useRouter();
-  const contract = useVotingContract(); // Hook pour accéder au contrat
+  const contract = useVotingContract();
 
   const [newVoterAddress, setNewVoterAddress] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [workflowStatus, setWorkflowStatus] = useState<number | null>(null);
 
+  // Fetch the current workflow status
+  const fetchWorkflowStatus = async () => {
+    try {
+      const resolvedContract = await contract;
+      const status = await resolvedContract?.currentWorkflowStatus();
+      setWorkflowStatus(status);
+    } catch (err) {
+      console.error("Failed to fetch workflow status:", err);
+      setError("Failed to fetch workflow status.");
+    }
+  };
+
+  // Add a voter to the whitelist
   const handleAddVoter = async () => {
     if (!newVoterAddress) {
       setError("Please enter a valid address");
@@ -37,35 +48,100 @@ export default function AdminPage() {
 
     try {
       const resolvedContract = await contract;
-      const tx = await resolvedContract?.registerVoter(newVoterAddress); // Appel de la fonction du contrat
-      await tx.wait(); // Attendre la confirmation de la transaction
+      const tx = await resolvedContract?.registerVoter(newVoterAddress);
+      await tx.wait();
       setSuccess("Voter added successfully");
+      setNewVoterAddress("");
     } catch (err) {
+      console.error("Failed to add voter:", err);
       setError("Failed to add voter. Make sure you are the owner.");
     }
   };
 
+  // Workflow management functions
   const handleStartProposalRegistration = async () => {
     try {
       const resolvedContract = await contract;
-      const tx = await resolvedContract?.startProposalsRegistration(); // Appel de la fonction du contrat
+      const tx = await resolvedContract?.startProposalsRegistration();
       await tx.wait();
       setSuccess("Proposal registration started successfully");
+      fetchWorkflowStatus();
     } catch (err) {
+      console.error("Failed to start proposal registration:", err);
       setError("Failed to start proposal registration.");
+    }
+  };
+
+  const handleEndProposalRegistration = async () => {
+    try {
+      const resolvedContract = await contract;
+      const tx = await resolvedContract?.endProposalsRegistration();
+      await tx.wait();
+      setSuccess("Proposal registration ended successfully");
+      fetchWorkflowStatus();
+    } catch (err) {
+      console.error("Failed to end proposal registration:", err);
+      setError("Failed to end proposal registration.");
+    }
+  };
+
+  const handleStartVotingSession = async () => {
+    try {
+      const resolvedContract = await contract;
+      const tx = await resolvedContract?.startVotingSession();
+      await tx.wait();
+      setSuccess("Voting session started successfully");
+      fetchWorkflowStatus();
+    } catch (err) {
+      console.error("Failed to start voting session:", err);
+      setError("Failed to start voting session.");
+    }
+  };
+
+  const handleEndVotingSession = async () => {
+    try {
+      const resolvedContract = await contract;
+      const tx = await resolvedContract?.endVotingSession();
+      await tx.wait();
+      setSuccess("Voting session ended successfully");
+      fetchWorkflowStatus();
+    } catch (err) {
+      console.error("Failed to end voting session:", err);
+      setError("Failed to end voting session.");
     }
   };
 
   const handleTallyVotes = async () => {
     try {
       const resolvedContract = await contract;
-      const tx = await resolvedContract?.tallyVotes(); // Appel de la fonction du contrat
+      const tx = await resolvedContract?.tallyVotes();
       await tx.wait();
       setSuccess("Votes tallied successfully");
+      fetchWorkflowStatus();
     } catch (err) {
+      console.error("Failed to tally votes:", err);
       setError("Failed to tally votes.");
     }
   };
+
+  const handleResetSession = async () => {
+    try {
+      const resolvedContract = await contract;
+      const tx = await resolvedContract?.resetSession();
+      await tx.wait();
+      setSuccess("Session reset successfully");
+      fetchWorkflowStatus();
+    } catch (err) {
+      console.error("Failed to reset session:", err);
+      setError("Failed to reset session.");
+    }
+  };
+
+  useEffect(() => {
+    if (isConnected) {
+      fetchWorkflowStatus();
+    }
+  }, [contract, isConnected]);
 
   useEffect(() => {
     if (error) {
@@ -104,21 +180,34 @@ export default function AdminPage() {
               <TabsTrigger value="results">Results</TabsTrigger>
             </TabsList>
 
+            {/* Workflow Management */}
             <TabsContent value="workflow" className="space-y-4 pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button
-                  onClick={handleStartProposalRegistration}
-                  className="h-20"
-                >
+                <Button onClick={handleStartProposalRegistration} className="h-20">
                   Start Proposal Registration
                 </Button>
-
+                <Button onClick={handleEndProposalRegistration} className="h-20">
+                  End Proposal Registration
+                </Button>
+                <Button onClick={handleStartVotingSession} className="h-20">
+                  Start Voting Session
+                </Button>
+                <Button onClick={handleEndVotingSession} className="h-20">
+                  End Voting Session
+                </Button>
                 <Button onClick={handleTallyVotes} className="h-20">
                   Tally Votes
                 </Button>
+                <Button onClick={handleResetSession} variant="destructive" className="h-20">
+                  Reset Session
+                </Button>
+              </div>
+              <div className="mt-4">
+                <p>Current Workflow Status: {workflowStatus}</p>
               </div>
             </TabsContent>
 
+            {/* Voter Management */}
             <TabsContent value="voters" className="space-y-4 pt-4">
               <Card>
                 <CardHeader>
@@ -139,7 +228,6 @@ export default function AdminPage() {
                           onChange={(e) => setNewVoterAddress(e.target.value)}
                         />
                         <Button onClick={handleAddVoter}>
-                          <UserPlus className="h-4 w-4 mr-2" />
                           Add
                         </Button>
                       </div>
