@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: GPL-3.0
+
 pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -16,7 +18,10 @@ contract Voting is Ownable {
     WorkflowStatus public currentWorkflowStatus;
 
     event VoterRegistered(address voterAddress);
-    event WorkflowStatusChange(WorkflowStatus previousStatus, WorkflowStatus newStatus);
+    event WorkflowStatusChange(
+        WorkflowStatus previousStatus,
+        WorkflowStatus newStatus
+    );
     event ProposalRegistered(uint proposalId);
     event Voted(address voter, uint proposalId);
     event VoteCancelled(address voter, uint proposalId);
@@ -63,8 +68,11 @@ contract Voting is Ownable {
      * @dev A voter must be in the whitelist to be registered
      * @param _voterAddress The address of the voter to be registered
      */
-    function registerVoter(address _voterAddress) public {
-        require(!voterAdress[_voterAddress].isRegistered, "Voter already registered");
+    function registerVoter(address _voterAddress) public onlyOwner {
+        require(
+            !voterAdress[_voterAddress].isRegistered,
+            "Voter already registered"
+        );
         voterAdress[_voterAddress].isRegistered = true;
         emit VoterRegistered(_voterAddress);
     }
@@ -74,7 +82,10 @@ contract Voting is Ownable {
      * @dev Only the owner can start the proposals registration phase
      */
     function startProposalsRegistration() external onlyOwner {
-        emit WorkflowStatusChange(WorkflowStatus.RegisteringVoters, WorkflowStatus.ProposalsRegistrationStarted);
+        emit WorkflowStatusChange(
+            WorkflowStatus.RegisteringVoters,
+            WorkflowStatus.ProposalsRegistrationStarted
+        );
         currentWorkflowStatus = WorkflowStatus.ProposalsRegistrationStarted;
     }
 
@@ -84,7 +95,11 @@ contract Voting is Ownable {
      * @param _description The description of the proposal
      */
     function addProposal(string memory _description) public {
-        require(currentWorkflowStatus == WorkflowStatus.ProposalsRegistrationStarted, "Proposals registration session is not active");
+        require(
+            currentWorkflowStatus ==
+                WorkflowStatus.ProposalsRegistrationStarted,
+            "Proposals registration session is not active"
+        );
         proposals.push(Proposal(_description, 0));
         emit ProposalRegistered(proposals.length - 1);
     }
@@ -94,7 +109,10 @@ contract Voting is Ownable {
      * @dev Only the owner can end the proposals registration phase
      */
     function endProposalsRegistration() external onlyOwner {
-        emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationStarted, WorkflowStatus.ProposalsRegistrationEnded);
+        emit WorkflowStatusChange(
+            WorkflowStatus.ProposalsRegistrationStarted,
+            WorkflowStatus.ProposalsRegistrationEnded
+        );
         currentWorkflowStatus = WorkflowStatus.ProposalsRegistrationEnded;
     }
 
@@ -103,7 +121,10 @@ contract Voting is Ownable {
      * @dev Only the owner can start the voting session
      */
     function startVotingSession() external onlyOwner {
-        emit WorkflowStatusChange(WorkflowStatus.ProposalsRegistrationEnded, WorkflowStatus.VotingSessionStarted);
+        emit WorkflowStatusChange(
+            WorkflowStatus.ProposalsRegistrationEnded,
+            WorkflowStatus.VotingSessionStarted
+        );
         currentWorkflowStatus = WorkflowStatus.VotingSessionStarted;
     }
 
@@ -112,7 +133,10 @@ contract Voting is Ownable {
      * @dev Only the owner can end the voting session
      */
     function endVotingSession() external onlyOwner {
-        emit WorkflowStatusChange(WorkflowStatus.VotingSessionStarted, WorkflowStatus.VotingSessionEnded);
+        emit WorkflowStatusChange(
+            WorkflowStatus.VotingSessionStarted,
+            WorkflowStatus.VotingSessionEnded
+        );
         currentWorkflowStatus = WorkflowStatus.VotingSessionEnded;
     }
 
@@ -121,7 +145,10 @@ contract Voting is Ownable {
      * @dev Only the owner can tally the votes
      */
     function tallyVotes() external onlyOwner {
-        emit WorkflowStatusChange(WorkflowStatus.VotingSessionEnded, WorkflowStatus.VotesTallied);
+        emit WorkflowStatusChange(
+            WorkflowStatus.VotingSessionEnded,
+            WorkflowStatus.VotesTallied
+        );
         currentWorkflowStatus = WorkflowStatus.VotesTallied;
     }
 
@@ -131,7 +158,10 @@ contract Voting is Ownable {
      * @param _proposalId The ID of the proposal to vote for
      */
     function vote(uint _proposalId) public {
-        require(currentWorkflowStatus == WorkflowStatus.VotingSessionStarted, "Voting session is not active");
+        require(
+            currentWorkflowStatus == WorkflowStatus.VotingSessionStarted,
+            "Voting session is not active"
+        );
         require(voterAdress[msg.sender].isRegistered, "Voter not registered");
         require(whiteList[msg.sender], "Voter is not in the whitelist");
         require(!voterAdress[msg.sender].hasVoted, "Voter already voted");
@@ -148,7 +178,10 @@ contract Voting is Ownable {
      * @return The description of the winning proposal
      */
     function getWinningProposal() public view returns (string memory) {
-        require(currentWorkflowStatus == WorkflowStatus.VotesTallied, "Tallied session is not active");
+        require(
+            currentWorkflowStatus == WorkflowStatus.VotesTallied,
+            "Tallied session is not active"
+        );
         uint winningVoteCount = 0;
         uint winningProposalIndex = 0;
         for (uint i = 0; i < proposals.length; i++) {
@@ -165,7 +198,11 @@ contract Voting is Ownable {
      * @dev Only registered voters can retrieve all votes
      * @return An array of voter addresses and an array of their corresponding voted proposal IDs
      */
-    function getAllVotes() public view returns (address[] memory, uint[] memory) {
+    function getAllVotes()
+        public
+        view
+        returns (address[] memory, uint[] memory)
+    {
         require(voterAdress[msg.sender].isRegistered, "Voter not registered");
         uint totalVoters = whiteListArray.length;
         address[] memory voters = new address[](totalVoters);
@@ -188,7 +225,10 @@ contract Voting is Ownable {
      * @dev A voter must be registered, in the whitelist, and have voted. The voting session must be active
      */
     function cancelVote() public {
-        require(currentWorkflowStatus == WorkflowStatus.VotingSessionStarted, "Voting session is not active");
+        require(
+            currentWorkflowStatus == WorkflowStatus.VotingSessionStarted,
+            "Voting session is not active"
+        );
         require(voterAdress[msg.sender].isRegistered, "Voter not registered");
         require(whiteList[msg.sender], "Voter is not in the whitelist");
         require(voterAdress[msg.sender].hasVoted, "Voter has not voted yet");
@@ -210,8 +250,8 @@ contract Voting is Ownable {
         delete proposals;
 
         // Reset voters' data
-        for (uint i = 0; i < whiteList.length; i++) {
-            address voterAddress = whiteList[i];
+        for (uint i = 0; i < whiteListArray.length; i++) {
+            address voterAddress = whiteListArray[i];
             voterAdress[voterAddress].isRegistered = false;
             voterAdress[voterAddress].hasVoted = false;
             voterAdress[voterAddress].votedProposalId = 0;

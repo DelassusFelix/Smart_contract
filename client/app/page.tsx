@@ -18,9 +18,9 @@ export default function Home() {
   const { address, isConnected } = useAccount();
   const router = useRouter();
 
-  if (!isConnected) {
+  {/*if (!isConnected) {
     router.push("/login");
-  }
+  }*/}
 
   return (
     <div className="w-screen flex flex-col items-center justify-center min-h-screen py-12 space-y-8 text-white bg-gray-800 ">
