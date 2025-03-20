@@ -103,6 +103,7 @@ export default function VoterPage() {
       <div className="w-screen flex justify-center text-white">
         <div className="container py-10">
           <h1 className="text-3xl font-bold mb-8">Voter Interface</h1>
+          {address && <p className="mb-4">Connected as: {address}</p>}
 
           {error && (
             <Alert variant="destructive" className="mb-4">
@@ -142,7 +143,7 @@ export default function VoterPage() {
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Not Registered</AlertTitle>
                     <AlertDescription>
-                      Your address is not registered as a voter
+                      Your address is not registered as a voter {String(isRegistered)}
                     </AlertDescription>
                   </Alert>
                 )}

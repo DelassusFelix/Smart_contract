@@ -1,4 +1,4 @@
 import VotingJSON from "./Voting.json";
 
-export const contractAddress = "0x0DE6485275bDf9793ded188fDD60d80BE397006e"
+export const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3"
 export const contractABI = VotingJSON.abi;

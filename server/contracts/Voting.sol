@@ -13,7 +13,7 @@ contract Voting is Ownable {
     address[] public whiteListArray;
     uint winningProposalId;
 
-    mapping(address => Voter) public voterAdress;
+    mapping(address => Voter) public voterAddress;
     Proposal[] public proposals;
     WorkflowStatus public currentWorkflowStatus;
 
@@ -68,12 +68,12 @@ contract Voting is Ownable {
      * @dev A voter must be in the whitelist to be registered
      * @param _voterAddress The address of the voter to be registered
      */
-    function registerVoter(address _voterAddress) public onlyOwner {
+    function registerVoter(address _voterAddress) public {
         require(
-            !voterAdress[_voterAddress].isRegistered,
+            !voterAddress[_voterAddress].isRegistered,
             "Voter already registered"
         );
-        voterAdress[_voterAddress].isRegistered = true;
+        voterAddress[_voterAddress].isRegistered = true;
         emit VoterRegistered(_voterAddress);
     }
 
@@ -162,13 +162,13 @@ contract Voting is Ownable {
             currentWorkflowStatus == WorkflowStatus.VotingSessionStarted,
             "Voting session is not active"
         );
-        require(voterAdress[msg.sender].isRegistered, "Voter not registered");
+        require(voterAddress[msg.sender].isRegistered, "Voter not registered");
         require(whiteList[msg.sender], "Voter is not in the whitelist");
-        require(!voterAdress[msg.sender].hasVoted, "Voter already voted");
+        require(!voterAddress[msg.sender].hasVoted, "Voter already voted");
         require(_proposalId < proposals.length, "Invalid proposal id");
         proposals[_proposalId].voteCount++;
-        voterAdress[msg.sender].hasVoted = true;
-        voterAdress[msg.sender].votedProposalId = _proposalId;
+        voterAddress[msg.sender].hasVoted = true;
+        voterAddress[msg.sender].votedProposalId = _proposalId;
         emit Voted(msg.sender, _proposalId);
     }
 
@@ -203,17 +203,17 @@ contract Voting is Ownable {
         view
         returns (address[] memory, uint[] memory)
     {
-        require(voterAdress[msg.sender].isRegistered, "Voter not registered");
+        require(voterAddress[msg.sender].isRegistered, "Voter not registered");
         uint totalVoters = whiteListArray.length;
         address[] memory voters = new address[](totalVoters);
         uint[] memory votes = new uint[](totalVoters);
         uint index = 0;
 
         for (uint i = 0; i < whiteListArray.length; i++) {
-            address voterAddress = whiteListArray[i];
-            if (voterAdress[voterAddress].hasVoted) {
-                voters[index] = voterAddress;
-                votes[index] = voterAdress[voterAddress].votedProposalId;
+            address voter = whiteListArray[i];
+            if (voterAddress[voter].hasVoted) {
+                voters[index] = voter;
+                votes[index] = voterAddress[voter].votedProposalId;
                 index++;
             }
         }
@@ -229,15 +229,15 @@ contract Voting is Ownable {
             currentWorkflowStatus == WorkflowStatus.VotingSessionStarted,
             "Voting session is not active"
         );
-        require(voterAdress[msg.sender].isRegistered, "Voter not registered");
+        require(voterAddress[msg.sender].isRegistered, "Voter not registered");
         require(whiteList[msg.sender], "Voter is not in the whitelist");
-        require(voterAdress[msg.sender].hasVoted, "Voter has not voted yet");
+        require(voterAddress[msg.sender].hasVoted, "Voter has not voted yet");
 
-        uint votedProposalId = voterAdress[msg.sender].votedProposalId;
+        uint votedProposalId = voterAddress[msg.sender].votedProposalId;
         proposals[votedProposalId].voteCount--;
 
-        voterAdress[msg.sender].hasVoted = false;
-        voterAdress[msg.sender].votedProposalId = 0;
+        voterAddress[msg.sender].hasVoted = false;
+        voterAddress[msg.sender].votedProposalId = 0;
 
         emit VoteCancelled(msg.sender, votedProposalId);
     }
@@ -251,10 +251,10 @@ contract Voting is Ownable {
 
         // Reset voters' data
         for (uint i = 0; i < whiteListArray.length; i++) {
-            address voterAddress = whiteListArray[i];
-            voterAdress[voterAddress].isRegistered = false;
-            voterAdress[voterAddress].hasVoted = false;
-            voterAdress[voterAddress].votedProposalId = 0;
+            address voter = whiteListArray[i];
+            voterAddress[voter].isRegistered = false;
+            voterAddress[voter].hasVoted = false;
+            voterAddress[voter].votedProposalId = 0;
         }
 
         // Optionally clear whitelist if needed
