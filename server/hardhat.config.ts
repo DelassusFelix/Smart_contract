@@ -3,10 +3,7 @@ import "@nomicfoundation/hardhat-toolbox";
 import "@nomicfoundation/hardhat-ignition";
 import "hardhat-gas-reporter";
 import "solidity-coverage";
-// /!\
 import "@nomicfoundation/hardhat-verify";
-// /!\
-
 import "dotenv/config";
 
 task("accounts", "Prints the list of accounts", async (args, hre) => {
@@ -62,14 +59,3 @@ const config: HardhatUserConfig = {
 };
 
 export default config;
-
-require("@nomiclabs/hardhat-ethers");
-
-module.exports = {
-  solidity: "0.8.20",
-  networks: {
-    hardhat: {
-      chainId: 1337
-    }
-  }
-};
