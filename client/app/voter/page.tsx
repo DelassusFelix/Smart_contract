@@ -198,11 +198,9 @@ export default function VoterPage() {
       <div className="w-screen flex justify-center text-white">
         <div className="container py-10">
           <h1 className="text-3xl font-bold mb-8">Voter Interface</h1>
-          {address && <p className="mb-4">Connected as: {address}</p>}
           <Button onClick={initialize} className="mb-4">
-            Initialize
+            Recharger
           </Button>
-          <p>is Registered : {String(isRegistered)}</p>
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
