@@ -1,6 +1,7 @@
 import { useAccount, useDisconnect } from "wagmi";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 
 export default function Navbar() {
   const { address, isConnected } = useAccount();
@@ -51,9 +52,6 @@ export default function Navbar() {
                 </a>
               </li>
               <li>
-                <p className="truncate max-w-xs">{address}</p>
-              </li>
-              <li>
                 <button
                   onClick={() => {
                     disconnect();
@@ -61,7 +59,7 @@ export default function Navbar() {
                   }}
                   className="flex items-center gap-2 text-xl text-white hover:text-gray-400"
                 >
-                  Logout
+                  <LogOut color="red" />
                 </button>
               </li>
             </>

@@ -26,13 +26,21 @@ export default function AdminPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [workflowStatus, setWorkflowStatus] = useState<number | null>(null);
+  const [proposals, setProposals] = useState<
+    { description: string; voteCount: number }[]
+  >([]);
 
-  // Fetch the current workflow status
   const fetchWorkflowStatus = async () => {
     try {
       const resolvedContract = await contract;
       const status = await resolvedContract?.currentWorkflowStatus();
       setWorkflowStatus(status);
+
+      if (status === 5) {
+        // Assuming status 5 means results are available
+        const fetchedProposals = await resolvedContract?.getProposals();
+        setProposals(fetchedProposals || []);
+      }
     } catch (err) {
       console.error("Failed to fetch workflow status:", err);
       setError("Failed to fetch workflow status.");
@@ -137,6 +145,39 @@ export default function AdminPage() {
     }
   };
 
+  <Card className="mb-8">
+    <CardHeader>
+      <CardTitle>Results</CardTitle>
+      <CardDescription>View the results of the voting session</CardDescription>
+    </CardHeader>
+    <CardContent>
+      {workflowStatus === 5 ? (
+        <div>
+          <h2 className="text-xl font-bold mb-4">Winning Proposal</h2>
+          {success && <p className="text-green-500 mb-4">{success}</p>}
+          <h2 className="text-xl font-bold mb-4">All Proposals</h2>
+          <ul>
+            {proposals.map((proposal, index) => (
+              <li
+                key={index}
+                className="mb-4 p-4 border rounded-lg bg-gray-800"
+              >
+                <p className="text-lg font-semibold">
+                  {index + 1}. {proposal.description}
+                </p>
+                <p className="text-sm text-gray-400">
+                  Votes: {proposal.voteCount}
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="text-gray-500">Results are not available yet.</p>
+      )}
+    </CardContent>
+  </Card>;
+
   useEffect(() => {
     if (isConnected) {
       fetchWorkflowStatus();
@@ -183,22 +224,46 @@ export default function AdminPage() {
             {/* Workflow Management */}
             <TabsContent value="workflow" className="space-y-4 pt-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Button onClick={handleStartProposalRegistration} className="h-20">
+                <Button
+                  onClick={handleStartProposalRegistration}
+                  className="h-20"
+                  disabled={workflowStatus !== null && workflowStatus > 0} // Actif uniquement si le statut est "RegisteringVoters"
+                >
                   Start Proposal Registration
                 </Button>
-                <Button onClick={handleEndProposalRegistration} className="h-20">
+                <Button
+                  onClick={handleEndProposalRegistration}
+                  className="h-20"
+                  disabled={workflowStatus != 1} // Actif uniquement si le statut est "ProposalsRegistrationStarted"
+                >
                   End Proposal Registration
                 </Button>
-                <Button onClick={handleStartVotingSession} className="h-20">
+                <Button
+                  onClick={handleStartVotingSession}
+                  className="h-20"
+                  disabled={workflowStatus != 2} // Actif uniquement si le statut est "ProposalsRegistrationEnded"
+                >
                   Start Voting Session
                 </Button>
-                <Button onClick={handleEndVotingSession} className="h-20">
+                <Button
+                  onClick={handleEndVotingSession}
+                  className="h-20"
+                  disabled={workflowStatus != 3} // Actif uniquement si le statut est "VotingSessionStarted"
+                >
                   End Voting Session
                 </Button>
-                <Button onClick={handleTallyVotes} className="h-20">
+                <Button
+                  onClick={handleTallyVotes}
+                  className="h-20"
+                  disabled={workflowStatus != 4} // Actif uniquement si le statut est "VotingSessionEnded"
+                >
                   Tally Votes
                 </Button>
-                <Button onClick={handleResetSession} variant="destructive" className="h-20">
+                <Button
+                  onClick={handleResetSession}
+                  variant="destructive"
+                  className="h-20"
+                >
                   Reset Session
                 </Button>
               </div>
@@ -227,12 +292,53 @@ export default function AdminPage() {
                           value={newVoterAddress}
                           onChange={(e) => setNewVoterAddress(e.target.value)}
                         />
-                        <Button onClick={handleAddVoter}>
-                          Add
-                        </Button>
+                        <Button onClick={handleAddVoter}>Add</Button>
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="results" className="space-y-4 pt-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Results</CardTitle>
+                  <CardDescription>
+                    View the results of the voting session
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {workflowStatus === 5 ? (
+                    <div>
+                      <h2 className="text-xl font-bold mb-4">
+                        Winning Proposal
+                      </h2>
+                      {success && (
+                        <p className="text-green-500 mb-4">{success}</p>
+                      )}
+                      <h2 className="text-xl font-bold mb-4">All Proposals</h2>
+                      <ul>
+                        {proposals.map((proposal, index) => (
+                          <li
+                            key={index}
+                            className="mb-4 p-4 border rounded-lg bg-gray-800"
+                          >
+                            <p className="text-lg font-semibold">
+                              {index + 1}. {proposal.description}
+                            </p>
+                            <p className="text-sm text-gray-400">
+                              Votes: {proposal.voteCount}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : (
+                    <p className="text-gray-500">
+                      Results are not available yet.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

@@ -152,6 +152,8 @@ contract Voting is Ownable {
         currentWorkflowStatus = WorkflowStatus.VotesTallied;
     }
 
+    error VoterNotRegistered(address voter);
+
     /**
      * @notice Casts a vote for a proposal
      * @dev A voter must be registered, in the whitelist, and the voting session must be active
@@ -162,13 +164,16 @@ contract Voting is Ownable {
             currentWorkflowStatus == WorkflowStatus.VotingSessionStarted,
             "Voting session is not active"
         );
-        require(voterAddress[msg.sender].isRegistered, "Voter not registered");
-        require(whiteList[msg.sender], "Voter is not in the whitelist");
+        if (!voterAddress[msg.sender].isRegistered) {
+            revert VoterNotRegistered(msg.sender);
+        }
         require(!voterAddress[msg.sender].hasVoted, "Voter already voted");
         require(_proposalId < proposals.length, "Invalid proposal id");
+
         proposals[_proposalId].voteCount++;
         voterAddress[msg.sender].hasVoted = true;
         voterAddress[msg.sender].votedProposalId = _proposalId;
+
         emit Voted(msg.sender, _proposalId);
     }
 
@@ -230,7 +235,6 @@ contract Voting is Ownable {
             "Voting session is not active"
         );
         require(voterAddress[msg.sender].isRegistered, "Voter not registered");
-        require(whiteList[msg.sender], "Voter is not in the whitelist");
         require(voterAddress[msg.sender].hasVoted, "Voter has not voted yet");
 
         uint votedProposalId = voterAddress[msg.sender].votedProposalId;
