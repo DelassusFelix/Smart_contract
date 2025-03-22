@@ -81,8 +81,8 @@ export default function Home() {
           </Card>
         )}
 
-        <Card className="flex flex-col justify-between mx-auto">
-          <CardHeader>
+<Card className="flex flex-col justify-between mx-auto w-4/5 md:w-3/4 lg:w-2/3">
+<CardHeader>
             <CardTitle>Voter Interface</CardTitle>
             <CardDescription>
               Submit proposals and vote on your preferred options
