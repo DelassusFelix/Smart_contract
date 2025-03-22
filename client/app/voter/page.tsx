@@ -16,6 +16,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { useVotingContract } from "@/hooks/useVotingContract";
 import Navbar from "@/components/navbar";
+import { useEffect } from "react";
 
 export default function VoterPage() {
   const { address, isConnected } = useAccount(); // Get the connected address
@@ -28,6 +29,36 @@ export default function VoterPage() {
   const [proposals, setProposals] = useState<string[]>([]);
   const [workflowStatus, setWorkflowStatus] = useState<number | null>(null);
   const [votedProposalId, setVotedProposalId] = useState<number | null>(null);
+
+  // Check if the user is connected or not
+
+  useEffect(() => {
+    if (!isConnected) {
+      setError("Sorry, you need to be connected to use this feature.");
+    } else {
+      setError(""); // Clear error if connected
+    }
+  }, [isConnected]);
+
+  if (!isConnected) {
+    return (
+      <>
+        <Navbar />
+          <div className="w-screen flex justify-center text-white pt-5 bg-gray-800">
+            <div className="container py-10">
+              <h1 className="text-3xl font-bold mb-8">Voter Interface</h1>
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </div>
+      </>
+    );
+  }
 
   // Check voter registration
   const checkRegistration = async () => {
@@ -317,3 +348,5 @@ export default function VoterPage() {
     </>
   );
 }
+
+
