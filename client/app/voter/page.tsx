@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { use, useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
 import {
@@ -28,6 +28,52 @@ export default function VoterPage() {
   const [proposals, setProposals] = useState<string[]>([]);
   const [workflowStatus, setWorkflowStatus] = useState<number | null>(null);
   const [votedProposalId, setVotedProposalId] = useState<number | null>(null);
+  const [isOwner, setIsOwner] = useState(false); // État pour savoir si l'utilisateur est l'owner
+
+  const checkIfOwner = async () => {
+    if (!contract || !address) return;
+  
+    try {
+      const resolvedContract = await contract;
+      if (resolvedContract) {
+        const owner = await resolvedContract.owner(); // Récupère l'adresse de l'owner
+        setIsOwner(owner.toLowerCase() === address.toLowerCase()); // Compare l'adresse connectée avec celle de l'owner
+      }
+    } catch (err) {
+      console.error("Failed to check if user is owner:", err);
+      setError("Failed to check if user is owner.");
+    }
+  };
+
+  // Check if the user is connected or not
+
+  useEffect(() => {
+    if (!isConnected) {
+      setError("Sorry, you need to be connected to use this feature.");
+    } else {
+      setError(""); // Clear error if connected
+    }
+  }, [isConnected]);
+
+  if (!isConnected) {
+    return (
+      <>
+        <Navbar />
+        <div className="w-screen flex justify-center text-white pt-5 bg-gray-800">
+          <div className="container py-10">
+            <h1 className="text-3xl font-bold mb-8">Voter Interface</h1>
+            {error && (
+              <Alert variant="destructive" className="mb-4">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   // Check voter registration
   const checkRegistration = async () => {
@@ -136,17 +182,19 @@ export default function VoterPage() {
 
   const fetchVotedProposal = async () => {
     if (!contract || !address) return;
-  
+
     try {
       const resolvedContract = await contract;
       if (resolvedContract) {
         // Récupérez les informations du votant
         const voter = await resolvedContract.voterAddress(address);
-  
+
         if (voter.hasVoted) {
           // Convertir l'ID de la proposition votée en un nombre classique
           const votedProposalId = Number(voter.votedProposalId);
-          const votedProposal = await resolvedContract.proposals(votedProposalId);
+          const votedProposal = await resolvedContract.proposals(
+            votedProposalId
+          );
           setVotedProposalId(votedProposalId); // Mettez à jour l'état avec l'ID
           setSuccess(`You voted for: ${votedProposal.description}`);
         } else {
@@ -185,6 +233,7 @@ export default function VoterPage() {
   // Manual initialization
   const initialize = async () => {
     if (isConnected) {
+      checkIfOwner();
       await checkRegistration();
       await fetchProposals();
       await fetchWorkflowStatus();
@@ -244,7 +293,7 @@ export default function VoterPage() {
               </div>
             </CardContent>
           </Card>
-          {isRegistered && (
+          {isRegistered && workflowStatus == 1 && (
             <Card className="mb-8">
               <CardHeader>
                 <CardTitle>Submit a Proposal</CardTitle>
@@ -278,9 +327,9 @@ export default function VoterPage() {
             <CardContent>
               <ul>
                 {proposals.map((proposal, index) => (
-                  <li key={index} className="mb-4 p-4 flex items-center">
+                  <li key={index} className="mb-2 p-2 flex items-center">
                     <div>
-                      <p className="text-lg font-semibold">
+                      <p className="text-md font-semibold">
                         {index + 1}. {proposal}
                       </p>
                     </div>
@@ -289,12 +338,14 @@ export default function VoterPage() {
                         {/* Icône "check" pour la proposition votée */}
                         <CheckCircle className="text-green-500 h-6 w-6 ml-2" />
                         {/* Bouton "Cancel Vote" */}
-                        <Button
-                          onClick={handleCancelVote}
-                          className="ml-4 bg-red-500 hover:bg-red-600 text-white"
-                        >
-                          Cancel Vote
-                        </Button>
+                        {workflowStatus == 3 && (
+                          <Button
+                            onClick={handleCancelVote}
+                            className="ml-4 bg-red-500 hover:bg-red-600 text-white"
+                          >
+                            Cancel Vote
+                          </Button>
+                        )}
                       </>
                     ) : (
                       workflowStatus == 3 && (

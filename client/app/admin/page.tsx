@@ -119,6 +119,40 @@ export default function AdminPage() {
     }
   };
 
+  const fetchResults = async () => {
+    if (!contract) return;
+
+    try {
+      const resolvedContract = await contract;
+      if (resolvedContract) {
+        // Vérifiez que le workflow est à l'état "VotesTallied"
+        if (workflowStatus != 5) {
+          setError("Results are not available yet.");
+          return;
+        }
+
+        // Récupérez la proposition gagnante
+        const winningProposal = await resolvedContract.getWinningProposal();
+        setSuccess(`${winningProposal}`);
+
+        // Récupérez toutes les propositions
+        const fetchedProposals = [];
+        const proposalCount = await resolvedContract.proposals.length; // Nombre de propositions
+        for (let i = 0; i < proposalCount; i++) {
+          const proposal = await resolvedContract.proposals(i);
+          fetchedProposals.push({
+            description: proposal.description,
+            voteCount: Number(proposal.voteCount),
+          });
+        }
+        setProposals(fetchedProposals);
+      }
+    } catch (err) {
+      console.error("Failed to fetch results:", err);
+      setError("Failed to fetch results.");
+    }
+  };
+
   const handleTallyVotes = async () => {
     try {
       const resolvedContract = await contract;
@@ -145,44 +179,17 @@ export default function AdminPage() {
     }
   };
 
-  <Card className="mb-8">
-    <CardHeader>
-      <CardTitle>Results</CardTitle>
-      <CardDescription>View the results of the voting session</CardDescription>
-    </CardHeader>
-    <CardContent>
-      {workflowStatus === 5 ? (
-        <div>
-          <h2 className="text-xl font-bold mb-4">Winning Proposal</h2>
-          {success && <p className="text-green-500 mb-4">{success}</p>}
-          <h2 className="text-xl font-bold mb-4">All Proposals</h2>
-          <ul>
-            {proposals.map((proposal, index) => (
-              <li
-                key={index}
-                className="mb-4 p-4 border rounded-lg bg-gray-800"
-              >
-                <p className="text-lg font-semibold">
-                  {index + 1}. {proposal.description}
-                </p>
-                <p className="text-sm text-gray-400">
-                  Votes: {proposal.voteCount}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : (
-        <p className="text-gray-500">Results are not available yet.</p>
-      )}
-    </CardContent>
-  </Card>;
-
   useEffect(() => {
     if (isConnected) {
       fetchWorkflowStatus();
     }
   }, [contract, isConnected]);
+
+  useEffect(() => {
+    if (workflowStatus == 5) {
+      fetchResults();
+    }
+  }, [workflowStatus]);
 
   useEffect(() => {
     if (error) {
@@ -309,15 +316,17 @@ export default function AdminPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {workflowStatus === 5 ? (
+                  {workflowStatus == 5 ? (
                     <div>
-                      <h2 className="text-xl font-bold mb-4">
-                        Winning Proposal
-                      </h2>
-                      {success && (
-                        <p className="text-green-500 mb-4">{success}</p>
-                      )}
-                      <h2 className="text-xl font-bold mb-4">All Proposals</h2>
+                      <div className="flex gap-2 items-center mb-4">
+                        <h2 className="text-lg font-semibold mb-2">
+                          Winning Proposal :
+                        </h2>
+                        {success && (
+                          <p className="text-lg text-green-500 font-semibold mb-2">{success}</p>
+                        )}
+                      </div>
+                      <h2 className="text-lg font-semibold mb-4">All Proposals</h2>
                       <ul>
                         {proposals.map((proposal, index) => (
                           <li
