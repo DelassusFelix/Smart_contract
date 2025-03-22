@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +32,7 @@ export default function VoterPage() {
 
   const checkIfOwner = async () => {
     if (!contract || !address) return;
-  
+
     try {
       const resolvedContract = await contract;
       if (resolvedContract) {
@@ -46,7 +46,6 @@ export default function VoterPage() {
   };
 
   // Check if the user is connected or not
-
   useEffect(() => {
     if (!isConnected) {
       setError("Sorry, you need to be connected to use this feature.");
@@ -54,56 +53,6 @@ export default function VoterPage() {
       setError(""); // Clear error if connected
     }
   }, [isConnected]);
-
-  if (!isConnected) {
-    return (
-      <>
-        <Navbar />
-        <div className="w-screen flex justify-center text-white pt-5 bg-gray-800">
-          <div className="container py-10">
-            <h1 className="text-3xl font-bold mb-8">Voter Interface</h1>
-            {error && (
-              <Alert variant="destructive" className="mb-4">
-                <AlertCircle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>{error}</AlertDescription>
-              </Alert>
-            )}
-          </div>
-        </div>
-      </>
-    );
-  }
-
-  // Check if the user is connected or not
-
-  useEffect(() => {
-    if (!isConnected) {
-      setError("Sorry, you need to be connected to use this feature.");
-    } else {
-      setError(""); // Clear error if connected
-    }
-  }, [isConnected]);
-
-  if (!isConnected) {
-    return (
-      <>
-        <Navbar />
-          <div className="w-screen flex justify-center text-white pt-5 bg-gray-800">
-            <div className="container py-10">
-              <h1 className="text-3xl font-bold mb-8">Voter Interface</h1>
-              {error && (
-                <Alert variant="destructive" className="mb-4">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Error</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-            </div>
-          </div>
-      </>
-    );
-  }
 
   // Check voter registration
   const checkRegistration = async () => {
@@ -210,56 +159,6 @@ export default function VoterPage() {
     }
   };
 
-  const fetchVotedProposal = async () => {
-    if (!contract || !address) return;
-
-    try {
-      const resolvedContract = await contract;
-      if (resolvedContract) {
-        // Récupérez les informations du votant
-        const voter = await resolvedContract.voterAddress(address);
-
-        if (voter.hasVoted) {
-          // Convertir l'ID de la proposition votée en un nombre classique
-          const votedProposalId = Number(voter.votedProposalId);
-          const votedProposal = await resolvedContract.proposals(
-            votedProposalId
-          );
-          setVotedProposalId(votedProposalId); // Mettez à jour l'état avec l'ID
-          setSuccess(`You voted for: ${votedProposal.description}`);
-        } else {
-          setVotedProposalId(null); // Aucun vote
-          setSuccess("You have not voted yet.");
-        }
-      }
-    } catch (err) {
-      console.error("Failed to fetch voted proposal:", err);
-      setError("Failed to fetch voted proposal");
-    }
-  };
-
-  const handleCancelVote = async () => {
-    if (workflowStatus != 3) {
-      setError("Voting session is not active");
-      return;
-    }
-
-    try {
-      const resolvedContract = await contract;
-      if (!resolvedContract) {
-        setError("Contract is not available");
-        return;
-      }
-      const tx = await resolvedContract.cancelVote();
-      await tx.wait();
-      setVotedProposalId(null); // Réinitialisez l'état après l'annulation
-      setSuccess("Vote successfully cancelled");
-    } catch (err) {
-      console.error("Failed to cancel vote:", err);
-      setError("Failed to cancel vote");
-    }
-  };
-
   // Manual initialization
   const initialize = async () => {
     if (isConnected) {
@@ -267,7 +166,6 @@ export default function VoterPage() {
       await checkRegistration();
       await fetchProposals();
       await fetchWorkflowStatus();
-      await fetchVotedProposal();
     }
   };
 
@@ -349,54 +247,39 @@ export default function VoterPage() {
               </CardContent>
             </Card>
           )}
-          <Card>
-            <CardHeader>
-              <CardTitle>Proposals</CardTitle>
-              <CardDescription>List of all proposals</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ul>
-                {proposals.map((proposal, index) => (
-                  <li key={index} className="mb-2 p-2 flex items-center">
-                    <div>
-                      <p className="text-md font-semibold">
-                        {index + 1}. {proposal}
-                      </p>
-                    </div>
-                    {votedProposalId === index ? (
-                      <>
-                        {/* Icône "check" pour la proposition votée */}
-                        <CheckCircle className="text-green-500 h-6 w-6 ml-2" />
-                        {/* Bouton "Cancel Vote" */}
-                        {workflowStatus == 3 && (
-                          <Button
-                            onClick={handleCancelVote}
-                            className="ml-4 bg-red-500 hover:bg-red-600 text-white"
-                          >
-                            Cancel Vote
-                          </Button>
-                        )}
-                      </>
-                    ) : (
-                      workflowStatus == 3 && (
-                        // Bouton "Vote" pour les propositions non votées
+          {workflowStatus ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Proposals</CardTitle>
+                <CardDescription>List of all proposals</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <ul>
+                  {proposals.map((proposal, index) => (
+                    <li key={index} className="mb-2 p-2 flex items-center">
+                      <div>
+                        <p className="text-md font-semibold">
+                          {index + 1}. {proposal}
+                        </p>
+                      </div>
+                      {workflowStatus == 3 && (
                         <Button
                           onClick={() => handleVote(index)}
                           className="ml-4 bg-blue-500 hover:bg-blue-600 text-white"
                         >
                           Vote
                         </Button>
-                      )
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </CardContent>
-          </Card>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          ) : (
+            <h1 className="text-xl">Proposal session has not yet started ! </h1>
+          )}
         </div>
       </div>
     </>
   );
 }
-
-

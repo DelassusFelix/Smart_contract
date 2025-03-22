@@ -19,7 +19,6 @@ import { useAccount } from "wagmi";
 import Navbar from "@/components/navbar";
 import { useRouter } from "next/navigation";
 
-
 export default function AdminPage() {
   const { address, isConnected } = useAccount();
   const [newVoterAddress, setNewVoterAddress] = useState("");
@@ -47,61 +46,6 @@ export default function AdminPage() {
     }
   };
 
-  useEffect(() => {
-    const checkOwnerStatus = async () => {
-      if (isConnected && (await contract)) {
-        checkIfOwner();
-      }
-    };
-    checkOwnerStatus();
-  }, [isConnected, address, contract]);
-
-  useEffect(() => {
-    if (!isConnected) {
-      setError("You are not connected.");
-      const timer = setTimeout(() => {
-        setError("");
-        router.push("/"); // Rediriger vers la page d'accueil
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [isConnected, router]);
-
-  useEffect(() => {
-    if (!isOwner && isConnected) {
-      setError("You are not authorized to access this page.");
-      const timer = setTimeout(() => {
-        setError("");
-        router.push("/"); // Rediriger vers la page d'accueil
-      }, 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [isOwner, isConnected, router]);
-
-  useEffect(() => {
-    if (error && (!isOwner || !isConnected)) {
-      const timer = setTimeout(() => setError(""), 5000);
-      return () => clearTimeout(timer);
-    }
-  }, [error, isOwner, isConnected]);
-
-  if (!isOwner) {
-    return (
-      <div className="w-screen flex justify-center text-white pt-5 bg-gray-800">
-        <div className="container py-10">
-          <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-          )}
-        </div>
-      </div>
-    );
-  }
-
   const fetchWorkflowStatus = async () => {
     try {
       const resolvedContract = await contract;
@@ -109,9 +53,7 @@ export default function AdminPage() {
       setWorkflowStatus(status);
 
       if (status === 5) {
-        // Assuming status 5 means results are available
-        const fetchedProposals = await resolvedContract?.getProposals();
-        setProposals(fetchedProposals || []);
+        fetchResults(); // Récupère les résultats si le workflow est à l'état "VotesTallied"
       }
     } catch (err) {
       console.error("Failed to fetch workflow status:", err);
@@ -119,7 +61,37 @@ export default function AdminPage() {
     }
   };
 
-  // Add a voter to the whitelist
+  const fetchResults = async () => {
+    if (!contract) return;
+
+    try {
+      const resolvedContract = await contract;
+      if (resolvedContract) {
+        if (workflowStatus != 5) {
+          setError("Results are not available yet.");
+          return;
+        }
+
+        const winningProposal = await resolvedContract.getWinningProposal();
+        setSuccess(`${winningProposal}`);
+
+        const fetchedProposals = [];
+        const proposalCount = await resolvedContract.proposals.length;
+        for (let i = 0; i < proposalCount; i++) {
+          const proposal = await resolvedContract.proposals(i);
+          fetchedProposals.push({
+            description: proposal.description,
+            voteCount: Number(proposal.voteCount),
+          });
+        }
+        setProposals(fetchedProposals);
+      }
+    } catch (err) {
+      console.error("Failed to fetch results:", err);
+      setError("Failed to fetch results.");
+    }
+  };
+
   const handleAddVoter = async () => {
     if (!newVoterAddress) {
       setError("Please enter a valid address");
@@ -138,7 +110,6 @@ export default function AdminPage() {
     }
   };
 
-  // Workflow management functions
   const handleStartProposalRegistration = async () => {
     try {
       const resolvedContract = await contract;
@@ -191,40 +162,6 @@ export default function AdminPage() {
     }
   };
 
-  const fetchResults = async () => {
-    if (!contract) return;
-
-    try {
-      const resolvedContract = await contract;
-      if (resolvedContract) {
-        // Vérifiez que le workflow est à l'état "VotesTallied"
-        if (workflowStatus != 5) {
-          setError("Results are not available yet.");
-          return;
-        }
-
-        // Récupérez la proposition gagnante
-        const winningProposal = await resolvedContract.getWinningProposal();
-        setSuccess(`${winningProposal}`);
-
-        // Récupérez toutes les propositions
-        const fetchedProposals = [];
-        const proposalCount = await resolvedContract.proposals.length; // Nombre de propositions
-        for (let i = 0; i < proposalCount; i++) {
-          const proposal = await resolvedContract.proposals(i);
-          fetchedProposals.push({
-            description: proposal.description,
-            voteCount: Number(proposal.voteCount),
-          });
-        }
-        setProposals(fetchedProposals);
-      }
-    } catch (err) {
-      console.error("Failed to fetch results:", err);
-      setError("Failed to fetch results.");
-    }
-  };
-
   const handleTallyVotes = async () => {
     try {
       const resolvedContract = await contract;
@@ -253,9 +190,10 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (isConnected) {
+      checkIfOwner();
       fetchWorkflowStatus();
     }
-  }, [contract, isConnected]);
+  }, [isConnected, address, contract]);
 
   useEffect(() => {
     if (workflowStatus == 5) {
@@ -269,6 +207,23 @@ export default function AdminPage() {
       return () => clearTimeout(timer);
     }
   }, [error]);
+
+  if (!isOwner) {
+    return (
+      <div className="w-screen flex justify-center text-white pt-5 bg-gray-800">
+        <div className="container py-10">
+          <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -306,35 +261,35 @@ export default function AdminPage() {
                 <Button
                   onClick={handleStartProposalRegistration}
                   className="h-20"
-                  disabled={workflowStatus !== null && workflowStatus > 0} // Actif uniquement si le statut est "RegisteringVoters"
+                  disabled={workflowStatus !== null && workflowStatus > 0}
                 >
                   Start Proposal Registration
                 </Button>
                 <Button
                   onClick={handleEndProposalRegistration}
                   className="h-20"
-                  disabled={workflowStatus != 1} // Actif uniquement si le statut est "ProposalsRegistrationStarted"
+                  disabled={workflowStatus != 1}
                 >
                   End Proposal Registration
                 </Button>
                 <Button
                   onClick={handleStartVotingSession}
                   className="h-20"
-                  disabled={workflowStatus != 2} // Actif uniquement si le statut est "ProposalsRegistrationEnded"
+                  disabled={workflowStatus != 2}
                 >
                   Start Voting Session
                 </Button>
                 <Button
                   onClick={handleEndVotingSession}
                   className="h-20"
-                  disabled={workflowStatus != 3} // Actif uniquement si le statut est "VotingSessionStarted"
+                  disabled={workflowStatus != 3}
                 >
                   End Voting Session
                 </Button>
                 <Button
                   onClick={handleTallyVotes}
                   className="h-20"
-                  disabled={workflowStatus != 4} // Actif uniquement si le statut est "VotingSessionEnded"
+                  disabled={workflowStatus != 4}
                 >
                   Tally Votes
                 </Button>
@@ -379,6 +334,7 @@ export default function AdminPage() {
               </Card>
             </TabsContent>
 
+            {/* Results */}
             <TabsContent value="results" className="space-y-4 pt-4">
               <Card>
                 <CardHeader>
@@ -395,10 +351,14 @@ export default function AdminPage() {
                           Winning Proposal :
                         </h2>
                         {success && (
-                          <p className="text-lg text-green-500 font-semibold mb-2">{success}</p>
+                          <p className="text-lg text-green-500 font-semibold mb-2">
+                            {success}
+                          </p>
                         )}
                       </div>
-                      <h2 className="text-lg font-semibold mb-4">All Proposals</h2>
+                      <h2 className="text-lg font-semibold mb-4">
+                        All Proposals
+                      </h2>
                       <ul>
                         {proposals.map((proposal, index) => (
                           <li

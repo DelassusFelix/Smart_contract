@@ -1,5 +1,6 @@
 import { useAccount } from "wagmi";
 import Link from "next/link";
+import Image from "next/image";
 import { useVotingContract } from "@/hooks/useVotingContract";
 import { useState, useEffect } from "react";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
@@ -37,9 +38,9 @@ export default function Navbar() {
     <nav className="bg-gray-800 p-4 fixed w-full top-0 z-10">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="text-white text-2xl font-bold">
-          Votereum
+        <Image src="/images/Votereum_blue_allonge.png" alt="Votereum" width={220} height={80} />
         </Link>
-        <div className="flex-grow"></div> {/* Espace flexible pour écarter les éléments */}
+        <div className="flex-grow"></div>
         <div className="flex items-center space-x-4">
           <Link href="/" className="text-white">
             Home
