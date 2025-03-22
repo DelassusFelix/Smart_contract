@@ -17,11 +17,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { useAccount } from "wagmi";
 import Navbar from "@/components/navbar";
+import { useRouter } from "next/navigation";
+
 
 export default function AdminPage() {
   const { address, isConnected } = useAccount();
-  const contract = useVotingContract();
-
   const [newVoterAddress, setNewVoterAddress] = useState("");
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -29,6 +29,78 @@ export default function AdminPage() {
   const [proposals, setProposals] = useState<
     { description: string; voteCount: number }[]
   >([]);
+  const contract = useVotingContract();
+  const [isOwner, setIsOwner] = useState(false);
+  const router = useRouter();
+
+  const checkIfOwner = async () => {
+    if (!contract || !address) return;
+
+    try {
+      const resolvedContract = await contract;
+      if (!resolvedContract) return;
+      const owner = await resolvedContract.owner(); // Récupère l'adresse de l'owner
+      setIsOwner(owner.toLowerCase() === address.toLowerCase()); // Compare l'adresse connectée avec celle de l'owner
+    } catch (err) {
+      console.error("Failed to check if user is owner:", err);
+      setError("Failed to check if user is owner.");
+    }
+  };
+
+  useEffect(() => {
+    const checkOwnerStatus = async () => {
+      if (isConnected && (await contract)) {
+        checkIfOwner();
+      }
+    };
+    checkOwnerStatus();
+  }, [isConnected, address, contract]);
+
+  useEffect(() => {
+    if (!isConnected) {
+      setError("You are not connected.");
+      const timer = setTimeout(() => {
+        setError("");
+        router.push("/"); // Rediriger vers la page d'accueil
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isConnected, router]);
+
+  useEffect(() => {
+    if (!isOwner && isConnected) {
+      setError("You are not authorized to access this page.");
+      const timer = setTimeout(() => {
+        setError("");
+        router.push("/"); // Rediriger vers la page d'accueil
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [isOwner, isConnected, router]);
+
+  useEffect(() => {
+    if (error && (!isOwner || !isConnected)) {
+      const timer = setTimeout(() => setError(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [error, isOwner, isConnected]);
+
+  if (!isOwner) {
+    return (
+      <div className="w-screen flex justify-center text-white pt-5 bg-gray-800">
+        <div className="container py-10">
+          <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Error</AlertTitle>
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const fetchWorkflowStatus = async () => {
     try {

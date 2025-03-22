@@ -75,6 +75,36 @@ export default function VoterPage() {
     );
   }
 
+  // Check if the user is connected or not
+
+  useEffect(() => {
+    if (!isConnected) {
+      setError("Sorry, you need to be connected to use this feature.");
+    } else {
+      setError(""); // Clear error if connected
+    }
+  }, [isConnected]);
+
+  if (!isConnected) {
+    return (
+      <>
+        <Navbar />
+          <div className="w-screen flex justify-center text-white pt-5 bg-gray-800">
+            <div className="container py-10">
+              <h1 className="text-3xl font-bold mb-8">Voter Interface</h1>
+              {error && (
+                <Alert variant="destructive" className="mb-4">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+            </div>
+          </div>
+      </>
+    );
+  }
+
   // Check voter registration
   const checkRegistration = async () => {
     if (!contract || !address) return;
@@ -368,3 +398,5 @@ export default function VoterPage() {
     </>
   );
 }
+
+
