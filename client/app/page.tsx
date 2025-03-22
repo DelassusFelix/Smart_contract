@@ -53,7 +53,7 @@ export default function Home() {
   }, [isConnected, address, contract]);
 
   return (
-    <div className="w-screen flex flex-col items-center justify-center min-h-screen py-12 space-y-8 text-white bg-gray-800">
+    <div className="w-screen flex flex-col items-center justify-center min-h-screen py-12 space-y-8 text-white bg-gray-800 overflow-hidden h-screen">
       <div className="text-center space-y-4">
         <h1 className="text-5xl font-bold tracking-tight">Votereum</h1>
         <p className="text-xl text-muted-foreground max-w-md">

@@ -11,22 +11,24 @@ export default function ResultsPage() {
   const resultsAvailable = votingPhase === VotingPhase.VotesTallied
 
   return (
-    <div>
+    <div className="w-screen h-screen flex flex-col bg-gray-800 text-white">
       <Navbar />
-      <div className="container py-10 pt-16"> {/* Ajout d'un padding-top pour éviter que le contenu soit caché derrière la navbar */}
-        <h1 className="text-3xl font-bold mb-8">Voting Results</h1>
+      <div className="flex-grow flex flex-col items-center pt-24"> {/* Ajout de pt-32 pour ajouter un padding-top */}
+        <h1 className="text-3xl font-bold mb-8 text-white">Voting Results</h1>
 
-        {resultsAvailable ? (
-          <ResultsView />
-        ) : (
-          <Alert className="mb-4">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Results Not Available</AlertTitle>
-            <AlertDescription>
-              The voting process is still in progress. Results will be available once the votes have been tallied.
-            </AlertDescription>
-          </Alert>
-        )}
+        <div className="container text-center">
+          {resultsAvailable ? (
+            <ResultsView />
+          ) : (
+            <Alert className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Results Not Available</AlertTitle>
+              <AlertDescription>
+                The voting process is still in progress. Results will be available once the votes have been tallied.
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
       </div>
     </div>
   )
