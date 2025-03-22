@@ -38,8 +38,8 @@ export default function AdminPage() {
     try {
       const resolvedContract = await contract;
       if (!resolvedContract) return;
-      const owner = await resolvedContract.owner(); // Récupère l'adresse de l'owner
-      setIsOwner(owner.toLowerCase() === address.toLowerCase()); // Compare l'adresse connectée avec celle de l'owner
+      const owner = await resolvedContract.owner();
+      setIsOwner(owner.toLowerCase() === address.toLowerCase());
     } catch (err) {
       console.error("Failed to check if user is owner:", err);
       setError("Failed to check if user is owner.");
@@ -53,7 +53,7 @@ export default function AdminPage() {
       setWorkflowStatus(status);
 
       if (status === 5) {
-        fetchResults(); // Récupère les résultats si le workflow est à l'état "VotesTallied"
+        fetchResults();
       }
     } catch (err) {
       console.error("Failed to fetch workflow status:", err);
@@ -203,7 +203,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (error) {
-      const timer = setTimeout(() => setError(""), 3000);
+      const timer = setTimeout(() => setError(""), 5000);
       return () => clearTimeout(timer);
     }
   }, [error]);
@@ -300,9 +300,6 @@ export default function AdminPage() {
                 >
                   Reset Session
                 </Button>
-              </div>
-              <div className="mt-4">
-                <p>Current Workflow Status: {workflowStatus}</p>
               </div>
             </TabsContent>
 

@@ -16,10 +16,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle, CheckCircle } from "lucide-react";
 import { useVotingContract } from "@/hooks/useVotingContract";
 import Navbar from "@/components/navbar";
+import Link from "next/link";
 
 export default function VoterPage() {
-  const { address, isConnected } = useAccount(); // Get the connected address
-  const contract = useVotingContract(); // Hook to access the contract
+  const { address, isConnected } = useAccount();
+  const contract = useVotingContract();
 
   const [proposal, setProposal] = useState("");
   const [error, setError] = useState("");
@@ -28,7 +29,7 @@ export default function VoterPage() {
   const [proposals, setProposals] = useState<string[]>([]);
   const [workflowStatus, setWorkflowStatus] = useState<number | null>(null);
   const [votedProposalId, setVotedProposalId] = useState<number | null>(null);
-  const [isOwner, setIsOwner] = useState(false); // État pour savoir si l'utilisateur est l'owner
+  const [isOwner, setIsOwner] = useState(false);
 
   const checkIfOwner = async () => {
     if (!contract || !address) return;
@@ -36,8 +37,8 @@ export default function VoterPage() {
     try {
       const resolvedContract = await contract;
       if (resolvedContract) {
-        const owner = await resolvedContract.owner(); // Récupère l'adresse de l'owner
-        setIsOwner(owner.toLowerCase() === address.toLowerCase()); // Compare l'adresse connectée avec celle de l'owner
+        const owner = await resolvedContract.owner();
+        setIsOwner(owner.toLowerCase() === address.toLowerCase());
       }
     } catch (err) {
       console.error("Failed to check if user is owner:", err);
@@ -45,16 +46,14 @@ export default function VoterPage() {
     }
   };
 
-  // Check if the user is connected or not
   useEffect(() => {
     if (!isConnected) {
       setError("Sorry, you need to be connected to use this feature.");
     } else {
-      setError(""); // Clear error if connected
+      setError("");
     }
   }, [isConnected]);
 
-  // Check voter registration
   const checkRegistration = async () => {
     if (!contract || !address) return;
 
@@ -69,7 +68,6 @@ export default function VoterPage() {
     }
   };
 
-  // Fetch proposals
   const fetchProposals = async () => {
     if (!contract) return;
 
@@ -84,7 +82,7 @@ export default function VoterPage() {
             fetchedProposals.push(proposal.description);
             index++;
           } catch {
-            break; // Stop fetching when an error occurs
+            break;
           }
         }
         setProposals(fetchedProposals);
@@ -94,7 +92,6 @@ export default function VoterPage() {
     }
   };
 
-  // Fetch workflow status
   const fetchWorkflowStatus = async () => {
     if (!contract) return;
 
@@ -109,7 +106,6 @@ export default function VoterPage() {
     }
   };
 
-  // Submit a proposal
   const handleSubmitProposal = async () => {
     if (!isRegistered) {
       setError("You must be a registered voter");
@@ -136,7 +132,6 @@ export default function VoterPage() {
     }
   };
 
-  // Cast a vote
   const handleVote = async (proposalId: number) => {
     if (workflowStatus != 3) {
       setError("Voting session is not active");
@@ -151,7 +146,7 @@ export default function VoterPage() {
       }
       const tx = await resolvedContract.vote(proposalId);
       await tx.wait();
-      setVotedProposalId(proposalId); // Mettez à jour l'état avec l'ID de la proposition votée
+      setVotedProposalId(proposalId);
       setSuccess(`Vote cast successfully for proposal ${proposalId + 1}`);
     } catch (err) {
       console.error("Failed to cast vote:", err);
@@ -159,13 +154,68 @@ export default function VoterPage() {
     }
   };
 
-  // Manual initialization
+  const fetchVotedProposal = async () => {
+    if (!contract || !address) return;
+
+    try {
+      const resolvedContract = await contract;
+      if (resolvedContract) {
+        const voter = await resolvedContract.voterAddress(address);
+
+        if (voter.hasVoted) {
+          const votedProposalId = Number(voter.votedProposalId);
+          const votedProposal = await resolvedContract.proposals(
+            votedProposalId
+          );
+          setVotedProposalId(votedProposalId);
+          setSuccess(`You voted for: ${votedProposal.description}`);
+        } else {
+          setVotedProposalId(null);
+          setSuccess("You have not voted yet.");
+        }
+      }
+    } catch (err) {
+      console.error("Failed to fetch voted proposal:", err);
+      setError("Failed to fetch voted proposal");
+    }
+  };
+
+  const handleCancelVote = async () => {
+    if (workflowStatus != 3) {
+      setError("Voting session is not active");
+      return;
+    }
+
+    try {
+      const resolvedContract = await contract;
+      if (!resolvedContract) {
+        setError("Contract is not available");
+        return;
+      }
+      const tx = await resolvedContract.cancelVote();
+      await tx.wait();
+      setVotedProposalId(null);
+      setSuccess("Vote successfully cancelled");
+    } catch (err) {
+      console.error("Failed to cancel vote:", err);
+      setError("Failed to cancel vote");
+    }
+  };
+
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => setSuccess(""), 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [success]);
+
   const initialize = async () => {
     if (isConnected) {
       checkIfOwner();
       await checkRegistration();
       await fetchProposals();
       await fetchWorkflowStatus();
+      await fetchVotedProposal();
     }
   };
 
@@ -175,9 +225,10 @@ export default function VoterPage() {
       <div className="w-screen flex justify-center text-white">
         <div className="container py-10">
           <h1 className="text-3xl font-bold mb-8">Voter Interface</h1>
-          <Button onClick={initialize} className="mb-4">
-            Recharger
-          </Button>
+          <Button
+            onClick={initialize}
+            className="text-gray-800 border-b rounded-none border-b-gray-500 bg-gray-800 hover:bg-gray-800"
+          ></Button>
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
@@ -247,7 +298,7 @@ export default function VoterPage() {
               </CardContent>
             </Card>
           )}
-          {workflowStatus ? (
+          {workflowStatus && workflowStatus != 5 ? (
             <Card>
               <CardHeader>
                 <CardTitle>Proposals</CardTitle>
@@ -262,19 +313,43 @@ export default function VoterPage() {
                           {index + 1}. {proposal}
                         </p>
                       </div>
-                      {workflowStatus == 3 && (
-                        <Button
-                          onClick={() => handleVote(index)}
-                          className="ml-4 bg-blue-500 hover:bg-blue-600 text-white"
-                        >
-                          Vote
-                        </Button>
+                      {votedProposalId === index ? (
+                        <>
+                          <CheckCircle className="text-green-500 h-6 w-6 ml-2" />
+                          {workflowStatus == 3 && (
+                            <Button
+                              onClick={handleCancelVote}
+                              className="ml-4 bg-red-500 hover:bg-red-600 text-white"
+                            >
+                              Cancel Vote
+                            </Button>
+                          )}
+                        </>
+                      ) : (
+                        workflowStatus == 3 &&
+                        votedProposalId == null && (
+                          <Button
+                            onClick={() => handleVote(index)}
+                            className="ml-4 bg-blue-500 hover:bg-blue-600 text-white"
+                          >
+                            Vote
+                          </Button>
+                        )
                       )}
                     </li>
                   ))}
                 </ul>
               </CardContent>
             </Card>
+          ) : workflowStatus == 5 ? (
+            <div className="flex flex-col gap-4 items-start">
+              <h1 className="text-xl w-auto">Voting session has ended ! </h1>
+              <Link href="/results" className="w-full">
+                <Button className="px-8 text-black text-md" variant="outline">
+                  View Current Results
+                </Button>
+              </Link>
+            </div>
           ) : (
             <h1 className="text-xl">Proposal session has not yet started ! </h1>
           )}

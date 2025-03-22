@@ -17,8 +17,8 @@ export default function Navbar() {
     try {
       const resolvedContract = await contract;
       if (!resolvedContract) return;
-      const owner = await resolvedContract.owner(); // Récupère l'adresse de l'owner
-      setIsOwner(owner.toLowerCase() === address.toLowerCase()); // Compare l'adresse connectée avec celle de l'owner
+      const owner = await resolvedContract.owner();
+      setIsOwner(owner.toLowerCase() === address.toLowerCase());
     } catch (err) {
       console.error("Failed to check if user is owner:", err);
       setError("Failed to check if user is owner.");
