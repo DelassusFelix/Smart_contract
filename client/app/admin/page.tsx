@@ -210,11 +210,15 @@ export default function AdminPage() {
 
   if (!isOwner) {
     return (
-      <div className="w-screen flex justify-center text-white pt-5 bg-gray-800">
-        <div className="container py-10">
+      <div className="w-screen flex justify-center items-center text-white pt-5 bg-gray-800 min-h-screen">
+        <div className="container py-10 text-center">
           <h1 className="text-3xl font-bold mb-8">Admin Dashboard</h1>
+          <div className="bg-red-500 text-white p-4 rounded-lg">
+            <AlertCircle className="inline-block h-6 w-6 mr-2" />
+            <span>You are not the administrator. Please connect with the admin account.</span>
+          </div>
           {error && (
-            <Alert variant="destructive" className="mb-4">
+            <Alert variant="destructive" className="mt-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Error</AlertTitle>
               <AlertDescription>{error}</AlertDescription>
