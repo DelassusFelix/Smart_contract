@@ -6,7 +6,7 @@ Votereum est une **application décentralisée (DApp)** permettant à une organi
 
 ## 📽️ Démo
 
-🎥 **Vidéo démonstration des fonctionnalités** :
+🎥 **Vidéo démonstration des fonctionnalités** : https://www.canva.com/design/DAGidz7bwbE/uRq0bSMRUjlEHE9Mrv6pYA/watch?utm_content=DAGidz7bwbE&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h6fcf644f4c
 
 🌍 **Déploiement public de la DApp** : https://vercel.com/delassusfelixs-projects/smart-contract
 
