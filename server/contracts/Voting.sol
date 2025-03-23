@@ -129,6 +129,7 @@ contract Voting is Ownable {
         require(currentWorkflowStatus == WorkflowStatus.VotingSessionStarted, "Voting session is not active");
         require(!voterAddress[msg.sender].hasVoted, "Voter already voted");
         require(_proposalId < proposals.length, "Invalid proposal id");
+        require(voterAddress[msg.sender].isRegistered, "Voter not registered");
 
         proposals[_proposalId].voteCount++;
         voterAddress[msg.sender].hasVoted = true;
